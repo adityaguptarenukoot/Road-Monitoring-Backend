@@ -1,0 +1,26 @@
+{
+  "in": {
+    "2WHLR": {
+      "max_count": 100
+    },
+    "HMV": {
+      "max_count": 50
+    },
+    "LMV": {
+      "max_count": 80
+    },
+    "time_period": 5
+  },
+  "out": {
+    "2WHLR": {
+      "max_count": 8
+    },
+    "HMV": {
+      "max_count": 50
+    },
+    "LMV": {
+      "max_count": 8
+    },
+    "time_period": 5
+  }
+}

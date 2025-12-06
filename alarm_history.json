@@ -1,93 +1,30 @@
 [
   {
-    "id": "ALM-1733140800001",
-    "type": "over_speeding",
-    "timestamp": "2025-12-03T00:30:00.000000",
+    "id": "alarm_2",
+    "type": "wrong_lane",
     "lane": "OUT",
-    "status": "cleared",
-    "speed": 85,
     "vehicle_type": "LMV",
-    "cleared_at": "2025-12-03T00:49:39.511290"
+    "timestamp": "2025-12-06T19:14:29.882738",
+    "status": "active",
+    "message": "Car detected in wrong lane"
   },
   {
-    "id": "ALM-1733140800002",
-    "type": "wrong_lane",
-    "timestamp": "2025-12-03T00:25:18.000000",
+    "id": "alarm_3",
+    "type": "parked_vehicle",
     "lane": "IN",
-    "status": "cleared",
     "vehicle_type": "2WHLR",
-    "cleared_at": "2025-12-03T00:49:45.144508"
-  },
-  {
-    "id": "ALM-1733140800003",
-    "type": "parked_vehicle",
-    "timestamp": "2025-12-03T00:20:05.000000",
-    "lane": "OUT",
+    "timestamp": "2025-12-06T19:14:29.882833",
     "status": "active",
-    "duration": "5 mins",
-    "vehicle_type": "HMV"
+    "message": "Bike parked in restricted area",
+    "duration": "3 mins"
   },
   {
-    "id": "ALM-1733140800004",
-    "type": "over_speeding",
-    "timestamp": "2025-12-03T00:15:42.000000",
-    "lane": "IN",
-    "status": "active",
-    "speed": 92,
-    "vehicle_type": "2WHLR"
-  },
-  {
-    "id": "ALM-1733140800005",
+    "id": "alarm_4",
     "type": "wrong_lane",
-    "timestamp": "2025-12-03T00:10:30.000000",
-    "lane": "OUT",
-    "status": "active",
-    "vehicle_type": "LMV"
-  },
-  {
-    "id": "ALM-1733140800006",
-    "type": "over_speeding",
-    "timestamp": "2025-12-02T23:55:15.000000",
     "lane": "IN",
-    "status": "cleared",
-    "speed": 78,
-    "vehicle_type": "LMV",
-    "cleared_at": "2025-12-03T00:00:00.000000"
-  },
-  {
-    "id": "ALM-1733140800007",
-    "type": "parked_vehicle",
-    "timestamp": "2025-12-02T23:45:22.000000",
-    "lane": "OUT",
-    "status": "cleared",
-    "duration": "3 mins",
-    "vehicle_type": "2WHLR",
-    "cleared_at": "2025-12-03T00:00:00.000000"
-  },
-  {
-    "id": "ALM-1733140800008",
-    "type": "over_speeding",
-    "timestamp": "2025-12-03T00:35:12.000000",
-    "lane": "OUT",
+    "vehicle_type": "HMV",
+    "timestamp": "2025-12-06T19:14:29.882911",
     "status": "active",
-    "speed": 95,
-    "vehicle_type": "2WHLR"
-  },
-  {
-    "id": "ALM-1733140800009",
-    "type": "wrong_lane",
-    "timestamp": "2025-12-03T00:32:45.000000",
-    "lane": "IN",
-    "status": "active",
-    "vehicle_type": "HMV"
-  },
-  {
-    "id": "ALM-1733140800010",
-    "type": "parked_vehicle",
-    "timestamp": "2025-12-03T00:28:30.000000",
-    "lane": "IN",
-    "status": "active",
-    "duration": "8 mins",
-    "vehicle_type": "LMV"
+    "message": "Truck detected in wrong lane"
   }
 ]
