@@ -47,12 +47,9 @@ class TrafficDataSimulator:
         if not self.is_processing:
            return
 
-        # ========================================
-        # 🎲 RANDOM DATA GENERATION
-        # Adjust these ranges to control how fast counts grow
-        # ========================================
+        
         in_increment = {
-            "2WHLR": random.randint(0, 5),  # 0-5 bikes per update
+            "2WHLR": random.randint(0, 5),  
             "LMV": random.randint(0, 3),     # 0-3 cars per update
             "HMV": random.randint(0, 2)      # 0-2 trucks per update
         }
@@ -133,11 +130,7 @@ class TrafficDataSimulator:
         
         ✅ Returns REAL calculated data - no hardcoded values
         """
-        
-        # ========================================
-        # ✅ REAL DATA - Dynamic threshold calculation
-        # Thresholds will trigger naturally as counts increase
-        # ========================================
+       
         return {
             "counts": {
                 "total": self.total_counts.copy(),
@@ -145,7 +138,7 @@ class TrafficDataSimulator:
                 "out": self.out_counts.copy()
             },
             "rates": self.rates.copy(),
-            "thresholds_crossed": self.thresholds_crossed.copy(),  # ✅ Real data!
+            "thresholds_crossed": self.thresholds_crossed.copy(),  
             "processing_status": self.processing_status
         }
     

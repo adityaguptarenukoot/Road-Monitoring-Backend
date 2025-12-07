@@ -9,42 +9,39 @@ import os
 import json
 from pathlib import Path
 import io
-
+import cv2 
 
 
 app = Flask(__name__)
 
 
-
 CORS(app, resources={
-    r"/api/*": {"origins": "*"},
-    r"/video_feed": {"origins": "*"}
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "DELETE", "PUT", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    },
+    r"/video_feed": {
+        "origins": "*"
+    },
+    r"/processed_feed": {  
+        "origins": "*"
+    }
 })
-
 
 
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv', 'webm'}
 MAX_FILE_SIZE = 500 * 1024 * 1024
 
-
-
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
-
-
 
 traffic_data = TrafficDataSimulator()
 alarm_manager = AlarmManager()
 current_video_data = None  
 current_video_mimetype = 'video/mp4'
 
-
-
-
 backend_polling_rate = 5  # Default 
 polling_rate_lock = threading.Lock()
-
-
-
 
 DEFAULT_THRESHOLDS = {
     'out': {
@@ -61,16 +58,26 @@ DEFAULT_THRESHOLDS = {
     }
 }
 
-
-
 # Global thresholds variable
 current_thresholds = DEFAULT_THRESHOLDS.copy()
 THRESHOLDS_FILE = 'thresholds.json'
 
-
-
 print("✓ Server started")
 
+
+from video_processor import VideoProcessor
+
+def get_current_thresholds():
+    """Getter function for current thresholds"""
+    global current_thresholds
+    return current_thresholds
+
+video_processor = VideoProcessor(
+    alarm_manager, 
+    traffic_data, 
+    get_current_thresholds
+)
+print("✓ VideoProcessor initialized")
 
 
 # Load thresholds from file on startup
@@ -91,7 +98,6 @@ def load_thresholds():
         current_thresholds = DEFAULT_THRESHOLDS.copy()
 
 
-
 # Save thresholds to file
 def save_thresholds():
     try:
@@ -101,7 +107,6 @@ def save_thresholds():
         print(json.dumps(current_thresholds, indent=2))
     except Exception as e:
         print(f'✗ Failed to save thresholds: {e}')
-
 
 
 # Check if threshold is violated (count-based with time period)
@@ -132,13 +137,11 @@ def check_violation(vehicle_type, lane, count_in_period):
                 'message': f'{vehicle_type} count exceeded in {lane} lane: {count_in_period} vehicles in {time_period} minutes (limit: {max_count})',
                 'count': count_in_period,
                 'max_count': max_count,
-               
             }
         
         return None
     except KeyError:
         return None
-
 
 
 def background_data_updater():
@@ -160,18 +163,12 @@ def background_data_updater():
         time.sleep(current_rate)
 
 
-
-
-
-
 data_thread = threading.Thread(target=background_data_updater, daemon=True)
 data_thread.start()
 
 
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 
 def generate_placeholder_frame():
@@ -197,7 +194,6 @@ def generate_placeholder_frame():
     return buffer.getvalue()
 
 
-
 @app.route('/')
 def index():
     with polling_rate_lock:
@@ -211,7 +207,6 @@ def index():
         'video_uploaded': current_video_data is not None,
         'polling_rate_seconds': current_rate
     })
-
 
 
 @app.route('/video_feed')
@@ -286,8 +281,18 @@ def upload_video():
         }
         current_video_mimetype = mime_types.get(file_extension, 'video/mp4')
         
+       
+        video_path = 'temp_video.mp4'
+        with open(video_path, 'wb') as f:
+            f.write(current_video_data)
+        print(f"✓ Video saved to: {video_path}")
+        
+        # Reset and start
         traffic_data.reset_stats()
         traffic_data.start_processing()
+        
+
+        video_processor.start_processing(video_path)
         
         video_size_mb = len(current_video_data) / (1024 * 1024)
         
@@ -297,6 +302,7 @@ def upload_video():
         print(f"✓ Video loaded into memory")
         print(f"✓ Size: {video_size_mb:.2f} MB")
         print(f"✓ Type: {current_video_mimetype}")
+        print(f"✓ Video processing started")
         print(f"✓ Backend polling rate: {current_rate}s\n")
         
         return jsonify({
@@ -317,7 +323,6 @@ def upload_video():
         }), 500
 
 
-
 @app.route('/api/stats/current', methods=['GET'])
 def get_current_stats():
     stats = traffic_data.get_current_stats()
@@ -327,7 +332,6 @@ def get_current_stats():
         stats['backend_polling_rate'] = backend_polling_rate
     
     return jsonify(stats)
-
 
 
 @app.route('/api/stats/reset', methods=['POST'])
@@ -342,7 +346,6 @@ def reset_stats():
     })
 
 
-
 # GET: Fetch current thresholds
 @app.route('/api/thresholds', methods=['GET'])
 def get_thresholds():
@@ -352,8 +355,7 @@ def get_thresholds():
     })
 
 
-
-#  Update thresholds
+# Update thresholds
 @app.route('/api/thresholds', methods=['POST'])
 def update_thresholds():
     global current_thresholds
@@ -419,7 +421,6 @@ def update_thresholds():
         }), 500
 
 
-
 # POST endpoint to update backend polling rate
 @app.route('/api/polling-rate', methods=['POST'])
 def update_polling_rate():
@@ -463,8 +464,7 @@ def update_polling_rate():
         }), 500
 
 
-
-#  GET endpoint to fetch current polling rate
+# GET endpoint to fetch current polling rate
 @app.route('/api/polling-rate', methods=['GET'])
 def get_polling_rate():
     """Get current backend polling rate"""
@@ -478,14 +478,16 @@ def get_polling_rate():
     }), 200
 
 
-
+# ========================================
+# 🔧 UPDATED STOP PROCESSING
+# ========================================
 @app.route('/api/stop-processing', methods=['POST'])
 def stop_processing():
     global current_video_data
     traffic_data.stop_processing()
+    video_processor.stop_processing()  # ← ADDED
     current_video_data = None  
     return jsonify({'status': 'success', 'message': 'Processing stopped'})
-
 
 
 @app.route('/api/alarms', methods=['GET'])
@@ -504,7 +506,6 @@ def get_alarms():
             'status': 'error',
             'message': str(e)
         }), 500
-
 
 
 @app.route('/api/alarms/clear', methods=['POST'])
@@ -534,7 +535,6 @@ def clear_alarms():
         }), 500
 
 
-
 @app.route('/api/alarms/reset', methods=['POST'])
 def reset_alarms_route():
     """Reset all alarms"""
@@ -549,7 +549,6 @@ def reset_alarms_route():
             'status': 'error',
             'message': str(e)
         }), 500
-
 
 
 @app.route('/api/alarms/add-test', methods=['GET', 'POST']) 
@@ -574,10 +573,7 @@ def add_test_alarms():
         }), 500
 
 
-
-# ========================================
-# 🆕 DELETE ALARM ENDPOINTS
-# ========================================
+# DELETE ALARM ENDPOINTS
 @app.route('/api/alarms/delete/<alarm_id>', methods=['DELETE'])
 def delete_alarm(alarm_id):
     """Delete a specific alarm permanently"""
@@ -620,8 +616,56 @@ def delete_all_alarms():
 
 
 
+@app.route('/processed_feed')
+def processed_feed():
+   
+    def generate_frames():
+        """Generator function to stream frames"""
+        while True:
+            try:
+                
+                frame = video_processor.get_current_frame()
+                
+                if frame is None:
+                    
+                    placeholder_bytes = generate_placeholder_frame()
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + placeholder_bytes + b'\r\n')
+                    time.sleep(0.1)
+                    continue
+                
+                # Encode frame to JPEG
+                ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+                
+                if not ret:
+                    continue
+                
+                frame_bytes = buffer.tobytes()
+                
+                
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                
+            except Exception as e:
+                print(f"  Frame streaming error: {e}")
+                time.sleep(0.1)
+            
+            # Control frame rate (~30 FPS)
+            time.sleep(0.033)
+    
+    return Response(
+        generate_frames(),
+        mimetype='multipart/x-mixed-replace; boundary=frame',
+        headers={
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+        }
+    )
+
+
 if __name__ == '__main__':
-    # Load thresholds on startup
+   
     load_thresholds()
     
     print(f"✓ Backend polling rate: {backend_polling_rate} seconds\n")

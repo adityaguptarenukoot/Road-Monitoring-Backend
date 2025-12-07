@@ -11,7 +11,7 @@ class AlarmManager:
         self.load_alarms()
         
 
-        # 🧪 DUMMY DATA - DELETE THIS WHEN ADDING REAL DETECTION
+        #  DUMMY DATA - DELETE THIS WHEN ADDING REAL DETECTION
         
         if len(self.alarms) == 0:
             self._generate_dummy_alarms()
@@ -46,9 +46,7 @@ class AlarmManager:
             )
         """
         dummy_alarms = [
-            # ==========================================
-            # OUT Lane Alarms (Different from IN Lane)
-            # ==========================================
+          
             {
                 'type': 'parked_vehicle',
                 'lane': 'OUT',
